@@ -1056,30 +1056,28 @@ ngx_http_dav_ext_propfind_response(ngx_http_request_t *r, ngx_array_t *entries,
         if (escape == 0) {
             continue;
         }
-
+    
         p = ngx_pnalloc(r->pool, entry[n].uri.len + escape);
         if (p == NULL) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
-
+    
         entry[n].uri.len = (u_char *) ngx_escape_uri(p, entry[n].uri.data,
                                                      entry[n].uri.len,
                                                      NGX_ESCAPE_URI_COMPONENT)
                            - p;
-                           
-        for(int i = 0; entry[n].uri.len > 2 && i <= entry[n].uri.len - 3; i++){
-            if (p[i] == '%' && p[i + 1] == '2' && p[i + 2] == 'F'){
-                ngx_cpystrn(p + i + 1, p + i + 3, entry[n].uri.len - i);
-
+    
+        for (size_t i = 0; i + 2 < entry[n].uri.len; i++) {
+            if (p[i] == '%' && p[i + 1] == '2' && p[i + 2] == 'F') {
+                memmove(p + i + 1, p + i + 3, entry[n].uri.len - i - 2);
                 p[i] = '/';
-                p[entry[n].uri.len--] = 0;
-                p[entry[n].uri.len--] = 0;
+                entry[n].uri.len -= 2;
             }
         }
-
+    
         entry[n].uri.data = p;
     }
-
+    
     len = sizeof(head) - 1 + sizeof(tail) - 1;
 
     for (n = 0; n < entries->nelts; n++) {
